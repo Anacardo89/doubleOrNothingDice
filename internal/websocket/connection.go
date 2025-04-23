@@ -21,15 +21,7 @@ func NewServer() *Server {
 	}
 }
 
-func (s *Server) Run(addr string) {
-	http.HandleFunc("/ws", s.upgradeConnToWS)
-	log.Printf("WebSocket server running at %s/ws\n", addr)
-	if err := http.ListenAndServe(addr, nil); err != nil {
-		log.Fatal("ListenAndServe:", err)
-	}
-}
-
-func (s *Server) upgradeConnToWS(w http.ResponseWriter, r *http.Request) {
+func (s *Server) UpgradeConnToWS(w http.ResponseWriter, r *http.Request) {
 	conn, err := s.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("Upgrade failed:", err)

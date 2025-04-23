@@ -36,24 +36,59 @@ func handleWallet(conn *websocket.Conn, payload json.RawMessage) {
 	res := WalletResponse{
 		Balance: 100,
 	}
-	conn.WriteJSON(res)
+	payloadBytes, err := json.Marshal(res)
+	if err != nil {
+		log.Println("Error marshaling WalletResponse:", err)
+		return
+	}
+	msg := Message{
+		Type:    "wallet_response",
+		Payload: payloadBytes,
+	}
+	if err := conn.WriteJSON(msg); err != nil {
+		log.Println("Error sending message:", err)
+	}
 }
 
 func handlePlay(conn *websocket.Conn, payload json.RawMessage) {
 	// Placeholder response
 	res := PlayResponse{
 		RolledNumber: 4,
-		Result:       "win",
+		NextBet:      40,
+		Outcome:      "win",
 	}
-	conn.WriteJSON(res)
+	payloadBytes, err := json.Marshal(res)
+	if err != nil {
+		log.Println("Error marshaling PlayResponse:", err)
+		return
+	}
+	msg := Message{
+		Type:    "play_response",
+		Payload: payloadBytes,
+	}
+	if err := conn.WriteJSON(msg); err != nil {
+		log.Println("Error sending message:", err)
+	}
 }
 
 func handleEndPlay(conn *websocket.Conn, payload json.RawMessage) {
 	// Placeholder response
 	res := EndPlayResponse{
-		Winnings: 50,
+		Winnings: 40,
+		Balance:  120,
 	}
-	conn.WriteJSON(res)
+	payloadBytes, err := json.Marshal(res)
+	if err != nil {
+		log.Println("Error marshaling EndPlayResponse:", err)
+		return
+	}
+	msg := Message{
+		Type:    "end_play_response",
+		Payload: payloadBytes,
+	}
+	if err := conn.WriteJSON(msg); err != nil {
+		log.Println("Error sending message:", err)
+	}
 }
 
 func sendError(conn *websocket.Conn, errType, message string) {
