@@ -24,7 +24,7 @@ type PlayRequest struct {
 type PlayResponse struct {
 	RolledNumber int    `json:"rolled_number"`
 	NextBet      int    `json:"next_bet"`
-	Result       string `json:"result"` // win / lose
+	Outcome      string `json:"outcome"` // win / lose
 }
 
 type EndPlayRequest struct {
@@ -32,5 +32,6 @@ type EndPlayRequest struct {
 }
 
 type EndPlayResponse struct {
-	Winnings int `json:"balance"`
+	Winnings int `json:"winnings"`
+	Balance  int `json:"balance"`
 }

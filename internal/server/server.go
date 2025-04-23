@@ -19,8 +19,7 @@ func NewServer() *Server {
 }
 
 func (s *Server) Run(addr string) {
-	go s.websocketServer.Run(addr)
-
+	http.HandleFunc("/ws", s.websocketServer.UpgradeConnToWS)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("WebSocket server is running"))
 	})
