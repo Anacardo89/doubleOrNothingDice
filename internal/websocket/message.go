@@ -35,3 +35,19 @@ type EndPlayResponse struct {
 	Winnings int `json:"winnings"`
 	Balance  int `json:"balance"`
 }
+
+type ReqWithClient interface {
+	GetClientID() string
+}
+
+func (r WalletRequest) GetClientID() string {
+	return r.ClientID
+}
+
+func (r PlayRequest) GetClientID() string {
+	return r.ClientID
+}
+
+func (r EndPlayRequest) GetClientID() string {
+	return r.ClientID
+}

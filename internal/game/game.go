@@ -31,8 +31,8 @@ type Play struct {
 }
 
 // NewGame initializes a new game for a player.
-func NewGame(clientID string, initialBet int, playChoice string) *Game {
-	game := &Game{
+func NewGame(clientID string, initialBet int) *Game {
+	return &Game{
 		ClientID:   clientID,
 		InitialBet: initialBet,
 		CurrentBet: initialBet,
@@ -40,8 +40,6 @@ func NewGame(clientID string, initialBet int, playChoice string) *Game {
 		Plays:      []Play{},
 		rng:        rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
-	game.Play(playChoice)
-	return game
 }
 
 func (g *Game) RollDice() int {
@@ -52,32 +50,25 @@ func (g *Game) Play(playChoice string) (*Play, error) {
 	if !g.IsActive {
 		return nil, errors.New("game is not active")
 	}
-
 	diceResult := g.RollDice()
-
 	outcome := OutcomeLose
 	if (diceResult%2 == 0 && playChoice == BetEven) || (diceResult%2 != 0 && playChoice == BetOdd) {
 		outcome = OutcomeWin
 	}
-
 	play := Play{
 		BetAmount:  g.CurrentBet,
 		PlayChoice: playChoice,
 		Outcome:    outcome,
 		DiceResult: diceResult,
 	}
-
 	g.Plays = append(g.Plays, play)
-
 	if outcome == OutcomeLose {
 		g.IsActive = false
 		g.CurrentBet = 0
 	}
-
 	if g.IsActive {
 		g.CurrentBet *= 2
 	}
-
 	return &play, nil
 }
 

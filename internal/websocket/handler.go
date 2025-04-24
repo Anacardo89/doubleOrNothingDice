@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"log"
 
+	"github.com/Anacardo89/doubleOrNothingDice/internal/game"
+	"github.com/Anacardo89/doubleOrNothingDice/internal/user"
 	"github.com/gorilla/websocket"
 )
 
 // HandleMessage reads a message and dispatches it
-func HandleMessage(conn *websocket.Conn, rawMsg []byte) {
+func HandleMessage(conn *websocket.Conn, rawMsg []byte, s *Server) {
 	var msg Message
 	if err := json.Unmarshal(rawMsg, &msg); err != nil {
 		log.Println("Invalid message format:", err)
@@ -18,81 +20,89 @@ func HandleMessage(conn *websocket.Conn, rawMsg []byte) {
 
 	switch msg.Type {
 	case "wallet":
-		handleWallet(conn, msg.Payload)
+		handleWallet(conn, msg.Payload, s.sessionManager)
 
 	case "play":
-		handlePlay(conn, msg.Payload)
+		handlePlay(conn, msg.Payload, s.sessionManager)
 
 	case "end_play":
-		handleEndPlay(conn, msg.Payload)
+		handleEndPlay(conn, msg.Payload, s.sessionManager)
 
 	default:
 		sendError(conn, "unknown_type", "Unknown message type")
 	}
 }
 
-func handleWallet(conn *websocket.Conn, payload json.RawMessage) {
-	// Placeholder response
+func handleWallet(conn *websocket.Conn, payload json.RawMessage, sm *user.SessionManager) {
+	var req WalletRequest
+	if err := json.Unmarshal(payload, &req); err != nil {
+		sendError(conn, "invalid_wallet_request", "Could not unmarshall wallet request payload")
+		return
+	}
+	session := getSession(sm, req)
 	res := WalletResponse{
-		Balance: 100,
+		Balance: session.Balance,
 	}
-	payloadBytes, err := json.Marshal(res)
-	if err != nil {
-		log.Println("Error marshaling WalletResponse:", err)
-		return
-	}
-	msg := Message{
-		Type:    "wallet_response",
-		Payload: payloadBytes,
-	}
-	if err := conn.WriteJSON(msg); err != nil {
-		log.Println("Error sending message:", err)
-	}
+	sendMessage(conn, "wallet_response", res)
 }
 
-func handlePlay(conn *websocket.Conn, payload json.RawMessage) {
-	// Placeholder response
-	res := PlayResponse{
-		RolledNumber: 4,
-		NextBet:      40,
-		Outcome:      "win",
-	}
-	payloadBytes, err := json.Marshal(res)
-	if err != nil {
-		log.Println("Error marshaling PlayResponse:", err)
+func handlePlay(conn *websocket.Conn, payload json.RawMessage, sm *user.SessionManager) {
+	var req PlayRequest
+	if err := json.Unmarshal(payload, &req); err != nil {
+		sendError(conn, "invalid_play_request", "Could not unmarshall play request payload")
 		return
 	}
-	msg := Message{
-		Type:    "play_response",
-		Payload: payloadBytes,
+	session := getSession(sm, req)
+	if session.Game == nil || !session.Game.IsActive {
+		session.Game = game.NewGame(req.ClientID, req.BetAmount)
+		session.Balance -= req.BetAmount
 	}
-	if err := conn.WriteJSON(msg); err != nil {
-		log.Println("Error sending message:", err)
+	playResult, err := session.Game.Play(req.BetType)
+	if err != nil {
+		sendError(conn, "play_error", err.Error())
+		return
 	}
+	sendMessage(conn, "play_response", playResult)
 }
 
-func handleEndPlay(conn *websocket.Conn, payload json.RawMessage) {
-	// Placeholder response
+func handleEndPlay(conn *websocket.Conn, payload json.RawMessage, sm *user.SessionManager) {
+	var req EndPlayRequest
+	if err := json.Unmarshal(payload, &req); err != nil {
+		sendError(conn, "invalid_end_play_request", "Could not unmarshall end play request payload")
+		return
+	}
+	session := getSession(sm, req)
+	if session.Game == nil || !session.Game.IsActive {
+		sendError(conn, "no_active_game", "No active game to end")
+		return
+	}
+	session.Game.EndGame()
+	session.Balance += session.Game.CurrentBet
 	res := EndPlayResponse{
-		Winnings: 40,
-		Balance:  120,
+		Winnings: session.Game.CurrentBet,
+		Balance:  session.Balance,
 	}
-	payloadBytes, err := json.Marshal(res)
-	if err != nil {
-		log.Println("Error marshaling EndPlayResponse:", err)
-		return
+	session.Game = nil
+	sendMessage(conn, "end_play_response", res)
+}
+
+func getSession(sm *user.SessionManager, req ReqWithClient) *user.Session {
+	session, exists := sm.Get(req.GetClientID())
+	if !exists {
+		session = sm.Create(req.GetClientID())
 	}
-	msg := Message{
-		Type:    "end_play_response",
-		Payload: payloadBytes,
-	}
-	if err := conn.WriteJSON(msg); err != nil {
-		log.Println("Error sending message:", err)
-	}
+	return session
+}
+
+func sendMessage(conn *websocket.Conn, msgType string, payload interface{}) {
+	conn.WriteJSON(map[string]any{
+		"type":    msgType,
+		"payload": payload,
+	})
 }
 
 func sendError(conn *websocket.Conn, errType, message string) {
-	conn.WriteJSON(map[string]interface{}{
+	conn.WriteJSON(map[string]any{
 		"type":    errType,
 		"message": message,
 	})

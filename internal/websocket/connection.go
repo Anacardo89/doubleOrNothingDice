@@ -4,11 +4,14 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/Anacardo89/doubleOrNothingDice/internal/user"
+
 	"github.com/gorilla/websocket"
 )
 
 type Server struct {
-	upgrader websocket.Upgrader
+	upgrader       websocket.Upgrader
+	sessionManager *user.SessionManager
 }
 
 func NewServer() *Server {
@@ -18,6 +21,7 @@ func NewServer() *Server {
 			WriteBufferSize: 1024,
 			CheckOrigin:     func(r *http.Request) bool { return true }, // Allow all origins (adjust in production)
 		},
+		sessionManager: user.NewSessionManager(),
 	}
 }
 
@@ -39,6 +43,6 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 			log.Println("Error reading message:", err)
 			break
 		}
-		HandleMessage(conn, msg)
+		HandleMessage(conn, msg, s)
 	}
 }
