@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/Anacardo89/doubleOrNothingDice/internal/auth"
 	"github.com/Anacardo89/doubleOrNothingDice/internal/user"
 
 	"github.com/gorilla/websocket"
@@ -26,16 +27,27 @@ func NewServer() *Server {
 }
 
 func (s *Server) UpgradeConnToWS(w http.ResponseWriter, r *http.Request) {
+	tokenStr := r.URL.Query().Get("token")
+	if tokenStr == "" {
+		http.Error(w, "Missing token", http.StatusUnauthorized)
+		return
+	}
+	claims, err := auth.ParseToken(tokenStr)
+	if err != nil {
+		http.Error(w, "Invalid token", http.StatusUnauthorized)
+		return
+	}
+	userID := claims.ClientID
 	conn, err := s.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("Upgrade failed:", err)
 		return
 	}
 	log.Println("New WebSocket connection established")
-	go s.handleConnection(conn)
+	go s.handleConnection(conn, userID)
 }
 
-func (s *Server) handleConnection(conn *websocket.Conn) {
+func (s *Server) handleConnection(conn *websocket.Conn, userID string) {
 	defer conn.Close()
 	for {
 		_, msg, err := conn.ReadMessage()
@@ -43,6 +55,6 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 			log.Println("Error reading message:", err)
 			break
 		}
-		HandleMessage(conn, msg, s)
+		HandleMessage(conn, userID, msg, s)
 	}
 }
