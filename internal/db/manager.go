@@ -32,15 +32,38 @@ func (m *Manager) GetUserByID(ctx context.Context, id string) (*User, error) {
 	return &user, err
 }
 
+func (m *Manager) GetUserByName(ctx context.Context, username string) (*User, error) {
+	var user User
+	err := m.db.GetContext(ctx, &user, GetUserByNameQuery, username)
+	return &user, err
+}
+
 func (m *Manager) GetUserByEmail(ctx context.Context, email string) (*User, error) {
 	var user User
 	err := m.db.GetContext(ctx, &user, GetUserByEmailQuery, email)
 	return &user, err
 }
 
-func (m *Manager) ActivateUser(ctx context.Context, id int) error {
+func (m *Manager) ActivateUser(ctx context.Context, id string) error {
 	_, err := m.db.ExecContext(ctx, ActivateUserQuery, id)
 	return err
+}
+
+func (m *Manager) UpdateUserPassword(ctx context.Context, userID string, newHash string) error {
+	_, err := m.db.ExecContext(ctx, UpdateUserPasswordQuery, newHash, userID)
+	return err
+}
+
+func (m *Manager) IsUsernameTaken(ctx context.Context, username string) (bool, error) {
+	var exists bool
+	err := m.db.GetContext(ctx, &exists, CheckUsernameExistsQuery, username)
+	return exists, err
+}
+
+func (m *Manager) IsEmailTaken(ctx context.Context, email string) (bool, error) {
+	var exists bool
+	err := m.db.GetContext(ctx, &exists, CheckEmailExistsQuery, email)
+	return exists, err
 }
 
 // GAMES

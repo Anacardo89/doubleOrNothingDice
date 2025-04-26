@@ -3,7 +3,7 @@ package db
 import "time"
 
 type User struct {
-	ID           int       `db:"id"`
+	ID           string    `db:"id"`
 	Username     string    `db:"username"`
 	Email        string    `db:"email"`
 	PasswordHash string    `db:"password_hash"`
@@ -13,8 +13,8 @@ type User struct {
 }
 
 type Game struct {
-	ID         int        `db:"id"`
-	UserID     int        `db:"user_id"`
+	ID         string     `db:"id"`
+	UserID     string     `db:"user_id"`
 	InitialBet int        `db:"initial_bet"`
 	FinalBet   int        `db:"final_bet"`
 	TotalPlays int        `db:"total_plays"`
@@ -24,8 +24,8 @@ type Game struct {
 }
 
 type Play struct {
-	ID         int       `db:"id"`
-	GameID     int       `db:"game_id"`
+	ID         string    `db:"id"`
+	GameID     string    `db:"game_id"`
 	PlayNumber int       `db:"play_number"`
 	BetAmount  int       `db:"bet_amount"`
 	PlayChoice string    `db:"play_choice"`

@@ -63,6 +63,10 @@ func handlePlay(conn *websocket.Conn, userID string, payload json.RawMessage, sm
 		return
 	}
 	if session.Game == nil || !session.Game.IsActive {
+		if session.Balance < req.BetAmount {
+			sendError(conn, "unauthorized_action", "insufficient funds")
+			return
+		}
 		session.Game = game.NewGame(req.ClientID, req.BetAmount)
 		session.Balance -= req.BetAmount
 	}
