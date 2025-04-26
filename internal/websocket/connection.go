@@ -11,8 +11,9 @@ import (
 )
 
 type Server struct {
-	upgrader       websocket.Upgrader
-	sessionManager *user.SessionManager
+	upgrader          websocket.Upgrader
+	sessionManager    *user.SessionManager
+	connectionManager *user.ConnectionManager
 }
 
 func NewServer() *Server {
@@ -20,9 +21,10 @@ func NewServer() *Server {
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
-			CheckOrigin:     func(r *http.Request) bool { return true }, // Allow all origins (adjust in production)
+			CheckOrigin:     func(r *http.Request) bool { return true },
 		},
-		sessionManager: user.NewSessionManager(),
+		sessionManager:    user.NewSessionManager(),
+		connectionManager: user.NewConnectionManager(5),
 	}
 }
 
@@ -40,21 +42,26 @@ func (s *Server) UpgradeConnToWS(w http.ResponseWriter, r *http.Request) {
 	userID := claims.ClientID
 	conn, err := s.upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println("Upgrade failed:", err)
+		log.Println("WebSocket upgrade failed:", err)
 		return
 	}
-	log.Println("New WebSocket connection established")
+	log.Printf("New WebSocket connection established for user %s\n", userID)
+	s.connectionManager.Add(userID, conn)
 	go s.handleConnection(conn, userID)
 }
 
 func (s *Server) handleConnection(conn *websocket.Conn, userID string) {
-	defer conn.Close()
+	defer func() {
+		s.connectionManager.Remove(userID)
+		conn.Close()
+	}()
 	for {
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
 			log.Println("Error reading message:", err)
 			break
 		}
+		s.connectionManager.UpdateActivity(userID)
 		HandleMessage(conn, userID, msg, s)
 	}
 }

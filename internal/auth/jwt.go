@@ -1,12 +1,12 @@
 package auth
 
 import (
+	"errors"
 	"time"
 
+	"github.com/Anacardo89/doubleOrNothingDice/config"
 	"github.com/golang-jwt/jwt/v5"
 )
-
-var jwtKey = []byte("this-shouldnt-be-here")
 
 type Claims struct {
 	ClientID string `json:"client_id"`
@@ -14,7 +14,7 @@ type Claims struct {
 }
 
 func GenerateToken(clientID string) (string, error) {
-	expiration := time.Now().Add(1 * time.Hour)
+	expiration := time.Now().Add(time.Duration(config.AppConfig.JWT.ExpiryMinutes) * time.Minute)
 	claims := &Claims{
 		ClientID: clientID,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -22,16 +22,19 @@ func GenerateToken(clientID string) (string, error) {
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtKey)
+	return token.SignedString([]byte(config.AppConfig.JWT.Secret))
 }
 
 func ParseToken(tokenStr string) (*Claims, error) {
 	claims := &Claims{}
-	_, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
-		return jwtKey, nil
+	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(config.AppConfig.JWT.Secret), nil
 	})
 	if err != nil {
 		return nil, err
+	}
+	if !token.Valid {
+		return nil, errors.New("invalid token")
 	}
 	return claims, nil
 }

@@ -22,6 +22,12 @@ const (
         WHERE id = $1
     ;`
 
+	GetUserByNameQuery = `
+        SELECT *
+        FROM users
+        WHERE username = $1
+    ;`
+
 	GetUserByEmailQuery = `
         SELECT *
         FROM users
@@ -32,7 +38,27 @@ const (
 		UPDATE users
 		SET is_active = TRUE
 		WHERE id = $1
-	`
+	;`
+
+	UpdateUserPasswordQuery = `
+		UPDATE users 
+		SET password_hash = $1 
+		WHERE id = $2
+	;`
+
+	CheckUsernameExistsQuery = `
+		SELECT EXISTS (
+			SELECT 1 FROM users 
+			WHERE username = $1
+		)
+	;`
+
+	CheckEmailExistsQuery = `
+		SELECT EXISTS (
+			SELECT 1 FROM users
+			WHERE email = $1
+		)
+	;`
 
 	// Games
 	CreateGameQuery = `
