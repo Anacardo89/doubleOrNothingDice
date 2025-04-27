@@ -36,6 +36,15 @@ type EndPlayResponse struct {
 	Balance  int `json:"balance"`
 }
 
+type DepositRequest struct {
+	ClientID string `json:"client_id"`
+	Deposit  int    `json:"deposit"`
+}
+
+type DepositResponse struct {
+	Balance int `json:"balance"`
+}
+
 type ReqWithClient interface {
 	GetClientID() string
 }
@@ -49,5 +58,9 @@ func (r PlayRequest) GetClientID() string {
 }
 
 func (r EndPlayRequest) GetClientID() string {
+	return r.ClientID
+}
+
+func (r DepositRequest) GetClientID() string {
 	return r.ClientID
 }

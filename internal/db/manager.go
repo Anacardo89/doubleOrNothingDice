@@ -54,6 +54,11 @@ func (m *Manager) UpdateUserPassword(ctx context.Context, userID string, newHash
 	return err
 }
 
+func (m *Manager) UpdateUserBalance(ctx context.Context, userID string, newBalance int) error {
+	_, err := m.db.ExecContext(ctx, UpdateUserPasswordQuery, newBalance, userID)
+	return err
+}
+
 func (m *Manager) IsUsernameTaken(ctx context.Context, username string) (bool, error) {
 	var exists bool
 	err := m.db.GetContext(ctx, &exists, CheckUsernameExistsQuery, username)
@@ -88,6 +93,19 @@ func (m *Manager) GetGamesByUserID(ctx context.Context, userID string) ([]Game, 
 	var games []Game
 	err := m.db.SelectContext(ctx, &games, GetGamesByUserQuery, userID)
 	return games, err
+}
+
+func (m *Manager) UpdateGame(ctx context.Context, game *Game) error {
+	stmt, err := m.db.PrepareNamedContext(ctx, UpdateGameQuery)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	_, err = stmt.ExecContext(ctx, game)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // PLAYS

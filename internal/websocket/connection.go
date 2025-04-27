@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Anacardo89/doubleOrNothingDice/internal/auth"
+	"github.com/Anacardo89/doubleOrNothingDice/internal/db"
 	"github.com/Anacardo89/doubleOrNothingDice/internal/user"
 
 	"github.com/gorilla/websocket"
@@ -16,14 +17,14 @@ type Server struct {
 	connectionManager *user.ConnectionManager
 }
 
-func NewServer() *Server {
+func NewServer(dbManager *db.Manager) *Server {
 	return &Server{
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
 			CheckOrigin:     func(r *http.Request) bool { return true },
 		},
-		sessionManager:    user.NewSessionManager(),
+		sessionManager:    user.NewSessionManager(dbManager),
 		connectionManager: user.NewConnectionManager(5),
 	}
 }

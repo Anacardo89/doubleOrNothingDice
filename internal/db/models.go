@@ -8,6 +8,7 @@ type User struct {
 	Email        string    `db:"email"`
 	PasswordHash string    `db:"password_hash"`
 	IsActive     bool      `db:"is_active"`
+	Balance      int       `db:"balance"`
 	CreatedAt    time.Time `db:"created_at"`
 	UpdatedAt    time.Time `db:"updated_at"`
 }

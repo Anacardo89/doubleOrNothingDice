@@ -21,7 +21,7 @@ func NewServer(authHandler *api.AuthHandler) *Server {
 	s := &Server{
 		router:          router,
 		authHandler:     authHandler,
-		websocketServer: websocket.NewServer(),
+		websocketServer: websocket.NewServer(authHandler.DB),
 	}
 	s.routes()
 	return s
