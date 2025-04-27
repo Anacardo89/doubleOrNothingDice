@@ -6,12 +6,14 @@ const (
         INSERT INTO users (
 			username, 
 			email, 
-			password_hash
+			password_hash,
+			balance
 		)
         VALUES (
 			:username, 
 			:email, 
-			:password_hash
+			:password_hash,
+			0
 		)
 		RETURNING id
     ;`
@@ -43,6 +45,12 @@ const (
 	UpdateUserPasswordQuery = `
 		UPDATE users 
 		SET password_hash = $1 
+		WHERE id = $2
+	;`
+
+	UpdateUserBalanceQuery = `
+		UPDATE users 
+		SET balance = $1 
 		WHERE id = $2
 	;`
 
@@ -88,6 +96,17 @@ const (
         FROM games
         WHERE user_id = $1
     ;`
+
+	UpdateGameQuery = `
+		UPDATE games
+		SET
+    		final_bet = :final_bet,
+    		total_plays = :total_plays,
+    		end_time = NOW()
+		WHERE
+    		id = :game_id
+		RETURNING id;
+	;`
 
 	// Plays
 	CreatePlayQuery = `

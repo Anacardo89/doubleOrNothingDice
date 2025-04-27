@@ -15,6 +15,7 @@ const (
 )
 
 type Game struct {
+	ID         string
 	ClientID   string
 	InitialBet int
 	CurrentBet int

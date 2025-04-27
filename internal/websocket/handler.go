@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log"
 
-	"github.com/Anacardo89/doubleOrNothingDice/internal/game"
 	"github.com/Anacardo89/doubleOrNothingDice/internal/user"
 	"github.com/gorilla/websocket"
 )
@@ -22,13 +21,12 @@ func HandleMessage(conn *websocket.Conn, userID string, rawMsg []byte, s *Server
 	switch msg.Type {
 	case "wallet":
 		handleWallet(conn, userID, msg.Payload, s.sessionManager)
-
 	case "play":
 		handlePlay(conn, userID, msg.Payload, s.sessionManager)
-
 	case "end_play":
 		handleEndPlay(conn, userID, msg.Payload, s.sessionManager)
-
+	case "deposit":
+		handleDeposit(conn, userID, msg.Payload, s.sessionManager)
 	default:
 		sendError(conn, "unknown_type", "Unknown message type")
 	}
@@ -63,14 +61,13 @@ func handlePlay(conn *websocket.Conn, userID string, payload json.RawMessage, sm
 		return
 	}
 	if session.Game == nil || !session.Game.IsActive {
-		if session.Balance < req.BetAmount {
-			sendError(conn, "unauthorized_action", "insufficient funds")
+		_, err := sm.StartGame(userID, req.BetAmount)
+		if err != nil {
+			sendError(conn, "start_game_error", err.Error())
 			return
 		}
-		session.Game = game.NewGame(req.ClientID, req.BetAmount)
-		session.Balance -= req.BetAmount
 	}
-	playResult, err := session.Game.Play(req.BetType)
+	playResult, err := sm.PlayRound(userID, req.BetType)
 	if err != nil {
 		sendError(conn, "play_error", err.Error())
 		return
@@ -84,23 +81,39 @@ func handleEndPlay(conn *websocket.Conn, userID string, payload json.RawMessage,
 		sendError(conn, "invalid_end_play_request", "Could not unmarshall end play request payload")
 		return
 	}
+	_, err := getSession(sm, userID, req)
+	if err != nil {
+		sendError(conn, "unauthorized_action", err.Error())
+		return
+	}
+	if err := sm.EndGame(userID); err != nil {
+		sendError(conn, "end_game_error", err.Error())
+		return
+	}
+	session, _ := sm.Get(userID)
+	res := EndPlayResponse{
+		Winnings: session.Game.CurrentBet,
+		Balance:  session.Balance,
+	}
+	sendMessage(conn, "end_play_response", res)
+}
+
+func handleDeposit(conn *websocket.Conn, userID string, payload json.RawMessage, sm *user.SessionManager) {
+	var req DepositRequest
+	if err := json.Unmarshal(payload, &req); err != nil {
+		sendError(conn, "invalid_deposit_request", "Could not unmarshall wallet request payload")
+		return
+	}
 	session, err := getSession(sm, userID, req)
 	if err != nil {
 		sendError(conn, "unauthorized_action", err.Error())
 		return
 	}
-	if session.Game == nil || !session.Game.IsActive {
-		sendError(conn, "no_active_game", "No active game to end")
-		return
+	session.Balance += req.Deposit
+	res := DepositResponse{
+		Balance: session.Balance,
 	}
-	session.Game.EndGame()
-	session.Balance += session.Game.CurrentBet
-	res := EndPlayResponse{
-		Winnings: session.Game.CurrentBet,
-		Balance:  session.Balance,
-	}
-	session.Game = nil
-	sendMessage(conn, "end_play_response", res)
+	sendMessage(conn, "deposit_response", res)
 }
 
 func getSession(sm *user.SessionManager, userID string, req ReqWithClient) (*user.Session, error) {
@@ -110,7 +123,11 @@ func getSession(sm *user.SessionManager, userID string, req ReqWithClient) (*use
 	}
 	session, exists := sm.Get(req.GetClientID())
 	if !exists {
-		session = sm.Create(req.GetClientID())
+		session, err := sm.Create(req.GetClientID())
+		if err != nil {
+			return nil, err
+		}
+		return session, nil
 	}
 	return session, nil
 }
