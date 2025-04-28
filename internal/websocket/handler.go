@@ -122,7 +122,7 @@ func handleDeposit(conn *websocket.Conn, userID string, payload json.RawMessage,
 func getSession(sm *user.SessionManager, userID string, req ReqWithClient) (*user.Session, error) {
 	clientID := req.GetClientID()
 	if clientID != userID {
-		return nil, errors.New("ClientID in request does not match authenticated user.")
+		return nil, errors.New("clientID in request does not match authenticated user")
 	}
 	session, exists := sm.Get(req.GetClientID())
 	if !exists {
