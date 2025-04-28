@@ -81,18 +81,21 @@ func handleEndPlay(conn *websocket.Conn, userID string, payload json.RawMessage,
 		sendError(conn, "invalid_end_play_request", "Could not unmarshall end play request payload")
 		return
 	}
-	_, err := getSession(sm, userID, req)
+	session, err := getSession(sm, userID, req)
 	if err != nil {
 		sendError(conn, "unauthorized_action", err.Error())
 		return
+	}
+	winnings := 0
+	if session.Game != nil {
+		winnings = session.Game.CurrentBet
 	}
 	if err := sm.EndGame(userID); err != nil {
 		sendError(conn, "end_game_error", err.Error())
 		return
 	}
-	session, _ := sm.Get(userID)
 	res := EndPlayResponse{
-		Winnings: session.Game.CurrentBet,
+		Winnings: winnings,
 		Balance:  session.Balance,
 	}
 	sendMessage(conn, "end_play_response", res)
