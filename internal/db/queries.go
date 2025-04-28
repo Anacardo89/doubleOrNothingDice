@@ -104,7 +104,7 @@ const (
     		total_plays = :total_plays,
     		end_time = NOW()
 		WHERE
-    		id = :game_id
+    		id = :id
 		RETURNING id;
 	;`
 

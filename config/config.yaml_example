@@ -16,5 +16,5 @@ jwt:
 email:
   smtp_host: "smtp.gmail.com"
   smtp_port: 587
-  sender_email: "email@gmail.com"
-  sender_password: "your email app secret"
+  sender_email: "mail@gmail.com"
+  sender_password: "your mail app secret"

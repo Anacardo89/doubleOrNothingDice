@@ -55,7 +55,7 @@ func (m *Manager) UpdateUserPassword(ctx context.Context, userID string, newHash
 }
 
 func (m *Manager) UpdateUserBalance(ctx context.Context, userID string, newBalance int) error {
-	_, err := m.db.ExecContext(ctx, UpdateUserPasswordQuery, newBalance, userID)
+	_, err := m.db.ExecContext(ctx, UpdateUserBalanceQuery, newBalance, userID)
 	return err
 }
 

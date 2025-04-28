@@ -77,17 +77,17 @@ func (sm *SessionManager) StartGame(clientID string, initialBet int) (*game.Game
 		return nil, err
 	}
 	session.Game = game.NewGame(clientID, initialBet)
-	game := &db.Game{
+	dbgame := &db.Game{
 		UserID:     session.Game.ClientID,
 		InitialBet: session.Game.InitialBet,
 		FinalBet:   session.Game.CurrentBet,
 		TotalPlays: len(session.Game.Plays),
 	}
-	err = sm.DB.CreateGame(ctx, game)
+	err = sm.DB.CreateGame(ctx, dbgame)
 	if err != nil {
 		return nil, err
 	}
-	session.Game.ID = game.ID
+	session.Game.ID = dbgame.ID
 	return session.Game, nil
 }
 
@@ -104,16 +104,16 @@ func (sm *SessionManager) PlayRound(clientID string, betType string) (*game.Play
 	}
 	if playResult.Outcome == game.OutcomeLose {
 		ctx := context.Background()
-		game := &db.Game{
+		dbgame := &db.Game{
 			ID:         session.Game.ID,
 			FinalBet:   session.Game.CurrentBet,
 			TotalPlays: len(session.Game.Plays),
 		}
-		if err := sm.DB.UpdateGame(ctx, game); err != nil {
+		if err := sm.DB.UpdateGame(ctx, dbgame); err != nil {
 			return nil, err
 		}
 		for i, play := range session.Game.Plays {
-			savePlay := &db.Play{
+			dbplay := &db.Play{
 				GameID:     session.Game.ID,
 				PlayNumber: i + 1,
 				BetAmount:  play.BetAmount,
@@ -121,7 +121,7 @@ func (sm *SessionManager) PlayRound(clientID string, betType string) (*game.Play
 				DiceResult: play.DiceResult,
 				Outcome:    play.Outcome,
 			}
-			if err := sm.DB.CreatePlay(ctx, savePlay); err != nil {
+			if err := sm.DB.CreatePlay(ctx, dbplay); err != nil {
 				return nil, err
 			}
 		}
@@ -139,16 +139,16 @@ func (sm *SessionManager) EndGame(clientID string) error {
 	session.Game.EndGame()
 	session.Balance += session.Game.CurrentBet
 	ctx := context.Background()
-	game := &db.Game{
+	dbgame := &db.Game{
 		ID:         session.Game.ID,
 		FinalBet:   session.Game.CurrentBet,
 		TotalPlays: len(session.Game.Plays),
 	}
-	if err := sm.DB.UpdateGame(ctx, game); err != nil {
+	if err := sm.DB.UpdateGame(ctx, dbgame); err != nil {
 		return err
 	}
 	for i, play := range session.Game.Plays {
-		savePlay := &db.Play{
+		dbplay := &db.Play{
 			GameID:     session.Game.ID,
 			PlayNumber: i + 1,
 			BetAmount:  play.BetAmount,
@@ -156,7 +156,7 @@ func (sm *SessionManager) EndGame(clientID string) error {
 			DiceResult: play.DiceResult,
 			Outcome:    play.Outcome,
 		}
-		if err := sm.DB.CreatePlay(ctx, savePlay); err != nil {
+		if err := sm.DB.CreatePlay(ctx, dbplay); err != nil {
 			return err
 		}
 	}
