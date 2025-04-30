@@ -16,7 +16,7 @@ func main() {
 	db.Connect(config.AppConfig.Database.User, config.AppConfig.Database.Password, config.AppConfig.Database.Host, config.AppConfig.Database.Port, config.AppConfig.Database.DBName)
 	dbManager := db.NewManager(db.DB)
 	emailSender := email.NewEmailSender(config.AppConfig.Email.SMTPHost, config.AppConfig.Email.SMTPPort, config.AppConfig.Email.SenderEmail, config.AppConfig.Email.SenderPassword)
-	authHandler := &api.AuthHandler{DB: dbManager, EmailSender: emailSender}
+	authHandler := api.NewAuthHandler(dbManager, emailSender)
 	port := config.AppConfig.Server.Port
 	server := server.NewServer(authHandler)
 	log.Println("Starting the server...")
