@@ -6,6 +6,7 @@ import (
 
 	"github.com/Anacardo89/doubleOrNothingDice/internal/auth"
 	"github.com/Anacardo89/doubleOrNothingDice/internal/db"
+	"github.com/Anacardo89/doubleOrNothingDice/internal/redis"
 	"github.com/Anacardo89/doubleOrNothingDice/internal/user"
 
 	"github.com/gorilla/websocket"
@@ -13,19 +14,19 @@ import (
 
 type Server struct {
 	upgrader          websocket.Upgrader
+	connectionManager *ConnectionManager
 	sessionManager    *user.SessionManager
-	connectionManager *user.ConnectionManager
 }
 
-func NewServer(dbManager *db.Manager) *Server {
+func NewServer(dbManager *db.Manager, redisManager *redis.Manager) *Server {
 	return &Server{
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
 			CheckOrigin:     func(r *http.Request) bool { return true },
 		},
-		sessionManager:    user.NewSessionManager(dbManager),
-		connectionManager: user.NewConnectionManager(5),
+		connectionManager: NewConnectionManager(5),
+		sessionManager:    user.NewSessionManager(dbManager, redisManager),
 	}
 }
 

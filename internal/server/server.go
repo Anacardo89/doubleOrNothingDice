@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Anacardo89/doubleOrNothingDice/internal/api"
+	"github.com/Anacardo89/doubleOrNothingDice/internal/redis"
 	"github.com/Anacardo89/doubleOrNothingDice/internal/websocket"
 
 	"github.com/gorilla/mux"
@@ -16,12 +17,12 @@ type Server struct {
 	websocketServer *websocket.Server
 }
 
-func NewServer(authHandler *api.AuthHandler) *Server {
+func NewServer(authHandler *api.AuthHandler, redisManager *redis.Manager) *Server {
 	router := mux.NewRouter()
 	s := &Server{
 		router:          router,
 		authHandler:     authHandler,
-		websocketServer: websocket.NewServer(authHandler.DB),
+		websocketServer: websocket.NewServer(authHandler.DB, redisManager),
 	}
 	s.routes()
 	return s
