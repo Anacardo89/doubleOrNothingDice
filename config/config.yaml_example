@@ -9,6 +9,12 @@ database:
   password: "admin-pw"
   dbname: "DoubleOrNothingDice"
 
+redis:
+  host: "localhost"
+  port: 6379
+  db: 0
+  password: ""
+
 jwt:
   secret: "double-or-nothing-dice-secret"
   expiry_minutes: 60
