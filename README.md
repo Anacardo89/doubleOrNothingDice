@@ -1,5 +1,7 @@
 # Double Or Nothing Dice Game
 
+This was developed as a take home assignment in my interview process at Vertsa Play.
+
 ## Overview
 
 Welcome to **Double Or Nothing Dice**, a fun, web-based dice game where players can place bets, roll dice, and test their luck. The game supports multiple players, user balances, and integrates with a backend system for real-time gameplay. Players can interact with the system through HTTP APIs for account management (register, login, etc.) and WebSocket connections for real-time gameplay.
